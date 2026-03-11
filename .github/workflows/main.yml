@@ -1,0 +1,49 @@
+name: Auto Restart and Keep Codespace Active
+
+on:
+  schedule:
+    # Har minute run karega (cron syntax: minute hour day month day-of-week)
+    - cron: '* * * * *'
+  workflow_dispatch:  # Manually bhi run kar sakte ho
+
+jobs:
+  restart_codespace:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install GitHub CLI
+        run: |
+          if ! command -v gh &> /dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y gh jq
+          fi
+
+      - name: Authenticate GitHub CLI
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}  # Token ko secret mein rakho
+        run: |
+          echo "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" | gh auth login --with-token
+
+      - name: Check Codespace Status and Keep Alive
+        env:
+          CODESPACE_NAME: "codespace-automatic-space-engine-wr99v64xx6gphvvv7"
+        run: |
+          # Codespace ki current status fetch karo
+          STATUS=$(gh codespace list --json name,state | jq -r --arg name "$CODESPACE_NAME" '.[] | select(.name == $name) | .state')
+          
+          if [ -z "$STATUS" ]; then
+            echo "❌ Error: Codespace '$CODESPACE_NAME' nahi mila ya status fetch nahi ho saka."
+            exit 1
+          fi
+          
+          echo "📊 Current status: $STATUS"
+          
+          if [ "$STATUS" == "Shutdown" ]; then
+            echo "🔄 Codespace band hai. Start kar rahe hain..."
+            gh codespace start --codespace "$CODESPACE_NAME"
+          elif [ "$STATUS" == "Available" ]; then
+            echo "✅ Codespace active hai. Keep-alive signal bhej rahe hain..."
+            # Ek dummy command run karo taaki inactivity ki wajah se band na ho
+            gh codespace ssh --codespace "$CODESPACE_NAME" -- "echo 'Keep-alive signal at $(date)'" || echo "⚠️ SSH command failed, but codespace might still be active."
+          else
+            echo "ℹ️ Unknown status: $STATUS (maybe 'Starting' etc.) - koi action nahi."
+          fi
