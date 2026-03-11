@@ -1,0 +1,48 @@
+UserID: 8427123089 | Time: 2026-03-11 08:52:16.048051 | Command: /bgmi1 | Target: 34 | Port: 855 | Time: 2
+Username: @JODSMOKER1
+Target: 34
+Port: 855
+Time: 2
+
+UserID: 8427123089 | Time: 2026-03-11 08:52:29.523887 | Command: /bgmi1 | Target: 34 | Port: 855 | Time: 10
+Username: @JODSMOKER1
+Target: 34
+Port: 855
+Time: 10
+
+UserID: 8427123089 | Time: 2026-03-11 09:44:27.882712 | Command: /bgmi1 | Target: 11 | Port: 1 | Time: 90
+Username: @JODSMOKER1
+Target: 11
+Port: 1
+Time: 90
+
+UserID: 8427123089 | Time: 2026-03-11 09:49:40.015997 | Command: /bgmi1 | Target: 34.0.10.217 | Port: 22700 | Time: 500
+Username: @JODSMOKER1
+Target: 34.0.10.217
+Port: 22700
+Time: 500
+
+UserID: 8427123089 | Time: 2026-03-11 09:54:57.695675 | Command: /bgmi1 | Target: 34.0.1.1 | Port: 17155 | Time: 300
+Username: @JODSMOKER1
+Target: 34.0.1.1
+Port: 17155
+Time: 300
+
+UserID: 8427123089 | Time: 2026-03-11 09:58:02.485111 | Command: /bgmi1 | Target: 34.0.15.187 | Port: 28944 | Time: 300
+Username: @JODSMOKER1
+Target: 34.0.15.187
+Port: 28944
+Time: 300
+
+UserID: 8427123089 | Time: 2026-03-11 10:01:46.852362 | Command: /bgmi1 | Target: 34.0.15.187 | Port: 28994 | Time: 300
+Username: @JODSMOKER1
+Target: 34.0.15.187
+Port: 28994
+Time: 300
+
+UserID: 8427123089 | Time: 2026-03-11 10:03:34.168022 | Command: /bgmi1 | Target: 34.0.15.187 | Port: 28994 | Time: 300
+Username: @JODSMOKER1
+Target: 34.0.15.187
+Port: 28994
+Time: 300
+
