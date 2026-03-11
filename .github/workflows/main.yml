@@ -1,0 +1,174 @@
+#!/usr/bin/env python3
+"""
+Codespace Auto-Restart Monitor
+आपके codespace को हमेशा चालू रखने के लिए
+"""
+
+import time
+import requests
+import os
+import sys
+from datetime import datetime
+import json
+
+# आपका Codespace और Token
+CODESPACE_NAME = "codespace-automatic-space-engine-wr99v64xx6gphvvv7"
+GITHUB_TOKEN = "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"
+
+class CodespaceMonitor:
+    def __init__(self):
+        self.codespace_name = CODESPACE_NAME
+        self.token = GITHUB_TOKEN
+        self.headers = {
+            'Authorization': f'token {self.token}',
+            'Accept': 'application/vnd.github.v3+json',
+            'X-GitHub-Api-Version': '2022-11-28'
+        }
+        self.check_interval = 30  # हर 30 सेकंड में check करें
+        self.api_base = "https://api.github.com"
+        
+    def log_message(self, message):
+        """Timestamp के साथ message print करें"""
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{timestamp}] {message}")
+        sys.stdout.flush()  # Immediate output
+        
+    def check_codespace_status(self):
+        """Codespace का current status check करें"""
+        try:
+            url = f"{self.api_base}/user/codespaces/{self.codespace_name}"
+            response = requests.get(url, headers=self.headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                status = data.get('state', 'unknown')
+                return status
+            else:
+                self.log_message(f"⚠️ API Error: {response.status_code}")
+                self.log_message(f"Response: {response.text}")
+                return 'error'
+                
+        except requests.exceptions.RequestException as e:
+            self.log_message(f"❌ Connection Error: {e}")
+            return 'error'
+        except Exception as e:
+            self.log_message(f"❌ Unexpected Error: {e}")
+            return 'error'
+    
+    def start_codespace(self):
+        """Codespace start करें"""
+        try:
+            url = f"{self.api_base}/user/codespaces/{self.codespace_name}/start"
+            response = requests.post(url, headers=self.headers)
+            
+            if response.status_code in [200, 201, 202, 204]:
+                self.log_message("✅ Codespace start command successful!")
+                return True
+            else:
+                self.log_message(f"❌ Start failed: {response.status_code}")
+                self.log_message(f"Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_message(f"❌ Error starting codespace: {e}")
+            return False
+    
+    def get_codespace_details(self):
+        """Codespace की पूरी जानकारी दिखाएं"""
+        try:
+            url = f"{self.api_base}/user/codespaces/{self.codespace_name}"
+            response = requests.get(url, headers=self.headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                self.log_message("📊 Codespace Details:")
+                self.log_message(f"  • Name: {data.get('name')}")
+                self.log_message(f"  • State: {data.get('state')}")
+                self.log_message(f"  • Repository: {data.get('repository', {}).get('full_name')}")
+                self.log_message(f"  • Created: {data.get('created_at')}")
+                self.log_message(f"  • Last Used: {data.get('last_used_at')}")
+                return data
+            else:
+                self.log_message(f"❌ Could not fetch details: {response.status_code}")
+                return None
+                
+        except Exception as e:
+            self.log_message(f"❌ Error fetching details: {e}")
+            return None
+    
+    def run_forever(self):
+        """मुख्य monitoring loop - हमेशा चलता रहे"""
+        self.log_message("🚀 Codespace Auto-Restart Monitor Started")
+        self.log_message(f"📌 Monitoring Codespace: {self.codespace_name}")
+        self.log_message(f"⏱️ Check Interval: {self.check_interval} seconds")
+        
+        # पहले current status दिखाएं
+        self.get_codespace_details()
+        
+        restart_count = 0
+        
+        while True:
+            try:
+                # Status check करें
+                status = self.check_codespace_status()
+                
+                if status in ['shutdown', 'stopped']:
+                    restart_count += 1
+                    self.log_message(f"⚠️ Codespace बंद है! (Restart #{restart_count})")
+                    
+                    # Restart attempt
+                    if self.start_codespace():
+                        self.log_message("✅ Restart command sent successfully")
+                        self.log_message("⏳ Codespace शुरू होने में 1-2 मिनट लग सकते हैं")
+                    else:
+                        self.log_message("❌ Restart failed, retrying in 60 seconds...")
+                
+                elif status == 'available':
+                    self.log_message("✅ Codespace चालू है और available है")
+                
+                elif status == 'running':
+                    self.log_message("✅ Codespace running है")
+                
+                elif status == 'starting':
+                    self.log_message("⏳ Codespace start हो रहा है...")
+                
+                elif status == 'error':
+                    self.log_message("⚠️ Status check में error, retrying...")
+                
+                else:
+                    self.log_message(f"📊 Current Status: {status}")
+                
+                # Interval के हिसाब से wait करें
+                time.sleep(self.check_interval)
+                
+            except KeyboardInterrupt:
+                self.log_message("\n👋 Monitor बंद किया गया (Ctrl+C)")
+                self.log_message(f"📊 Total Restarts: {restart_count}")
+                break
+            except Exception as e:
+                self.log_message(f"❌ Main loop error: {e}")
+                time.sleep(self.check_interval)
+
+def main():
+    print("=" * 60)
+    print("    CODESPACE AUTO-RESTART MONITOR v1.0")
+    print("=" * 60)
+    
+    # Check if requests library is installed
+    try:
+        import requests
+    except ImportError:
+        print("❌ 'requests' library not found. Installing...")
+        os.system("pip install requests")
+        import requests
+    
+    monitor = CodespaceMonitor()
+    
+    try:
+        monitor.run_forever()
+    except Exception as e:
+        print(f"Fatal Error: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
