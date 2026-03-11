@@ -1,40 +1,73 @@
 #!/usr/bin/env python3
 """
-Codespace Auto-Restart Monitor
-आपके codespace को हमेशा चालू रखने के लिए
+⚡ SUPER FAST CODESPACE RESTARTER (6 sec interval)
 """
 
 import time
 import requests
-import os
-import sys
 from datetime import datetime
-import json
 
-# आपका Codespace और Token
+# ===== अपनी जानकारी भरें =====
+GITHUB_TOKEN = "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"
 CODESPACE_NAME = "codespace-automatic-space-engine-wr99v64xx6gphvvv7"
-GITHUB_TOKEN = "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"
+GITHUB_USERNAME = "adarsh"  # अपना GitHub username डालें
+# =============================
 
-class CodespaceMonitor:
-    def __init__(self):
-        self.codespace_name = CODESPACE_NAME
-        self.token = GITHUB_TOKEN
-        self.headers = {
-            'Authorization': f'token {self.token}',
-            'Accept': 'application/vnd.github.v3+json',
-            'X-GitHub-Api-Version': '2022-11-28'
-        }
-        self.check_interval = 30  # हर 30 सेकंड में check करें
-        self.api_base = "https://api.github.com"
+CHECK_INTERVAL = 6  # हर 6 सेकंड में
+
+headers = {
+    'Authorization': f'token {GITHUB_TOKEN}',
+    'Accept': 'application/vnd.github.v3+json'
+}
+
+print("="*60)
+print("🔥 CODESPACE AUTO-RESTART (6 SECOND INTERVAL)")
+print("="*60)
+print(f"📌 GitHub ID    : {GITHUB_USERNAME}")
+print(f"📌 Codespace    : {CODESPACE_NAME}")
+print(f"⏱️  Check every : {CHECK_INTERVAL} seconds")
+print("="*60)
+
+restart_count = 0
+
+while True:
+    try:
+        now = datetime.now().strftime("%H:%M:%S")
         
-    def log_message(self, message):
-        """Timestamp के साथ message print करें"""
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{timestamp}] {message}")
-        sys.stdout.flush()  # Immediate output
+        # Status check
+        url = f"https://api.github.com/user/codespaces/{CODESPACE_NAME}"
+        resp = requests.get(url, headers=headers)
         
-    def check_codespace_status(self):
-        """Codespace का current status check करें"""
+        if resp.status_code == 200:
+            data = resp.json()
+            status = data.get('state', 'unknown')
+            print(f"[{now}] Status: {status}", end="")
+            
+            if status in ['shutdown', 'stopped']:
+                restart_count += 1
+                print(f" ⚠️ RESTARTING #{restart_count}!")
+                
+                # Start codespace
+                start_url = f"https://api.github.com/user/codespaces/{CODESPACE_NAME}/start"
+                start_resp = requests.post(start_url, headers=headers)
+                
+                if start_resp.status_code in [200, 201, 202, 204]:
+                    print(f"[{now}] ✅ Restart command sent!")
+                else:
+                    print(f"[{now}] ❌ Failed: {start_resp.status_code}")
+            else:
+                print()
+        else:
+            print(f"[{now}] ❌ API error: {resp.status_code}")
+            
+        time.sleep(CHECK_INTERVAL)
+        
+    except KeyboardInterrupt:
+        print(f"\n👋 Monitor बंद किया गया (restarts: {restart_count})")
+        break
+    except Exception as e:
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] ❌ Error: {e}")
+        time.sleep(CHECK_INTERVAL)        """Codespace का current status check करें"""
         try:
             url = f"{self.api_base}/user/codespaces/{self.codespace_name}"
             response = requests.get(url, headers=self.headers)
